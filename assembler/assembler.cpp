@@ -1,24 +1,18 @@
-#include <assert.h>
 #include "assembler.h"
-#include "../include/common.h"
-#include <cstdio>
-#include <ctype.h>
-#include <sys/stat.h>
-#include <string.h> 
 
-  static int initBuffer(AsmFile *asmfile);
+//=========================================================================================================
 
-  static void splitBuffer(AsmFile *asmfile);
+static int initBuffer(AsmFile *asmfile);
 
-  static int initWordsArray(AsmFile *asmfile);
+static void splitBuffer(AsmFile *asmfile);
 
-  static int initTokensArray(AsmFile *asmfile);
+static int initWordsArray(AsmFile *asmfile);
 
-  static int identifyCmd(char *cmd);
+static int initCommandsArray(AsmFile *asmfile);
 
-  static int identifyCmdType(int code, char *param);
+static int identifyCommand(char *cmd);
 
-static int identifyCmdParam(int code, char *param);
+static int identifyParam(Command *cmd, char *param);
 
 //=========================================================================================================
 
@@ -26,49 +20,38 @@ int asmFileCtor(AsmFile *asmfile)
 {
   asmfile->cmd_file = fopen("cmd_file.txt", "r");
 
+  if (asmfile->cmd_file == nullptr)
+    {
+      return OPEN_CMD_FILE_ERROR;
+    }
+
   asmfile->cmd_file_size = 0;
   asmfile->words_num = 0;
-  asmfile->tokens_num = 0;
+  asmfile->commands_num = 0;
   asmfile->err_code = 0;
 
   int init_buffer_status = initBuffer(asmfile);
 
-  if (init_buffer_status == -1)
+  if (init_buffer_status != EXECUTION_SUCCESS)
     {
-      return -1;
+      return init_buffer_status;
     }
 
   int init_words_array = initWordsArray(asmfile);
 
-  if (init_words_array == -1)
+  if (init_words_array != EXECUTION_SUCCESS)
     {
-      return -1;
+      return init_words_array;
     }
 
-  int init_tokens_array = initTokensArray(asmfile);
+  int init_commands_array = initCommandsArray(asmfile);
 
-  if (init_tokens_array == -1)
+  if (init_commands_array != EXECUTION_SUCCESS)
     {
-      return -1;
+      return init_commands_array;
     }
 
-  return 0;
-}
-
-size_t getFileSize(const char *filename)
-{
-    assert(filename != nullptr);
-
-    struct stat file_info = {};
-
-    stat(filename, &file_info);
-
-    if (file_info.st_size <= 0)
-    {
-        // ??
-    }
-
-    return (size_t)file_info.st_size;
+  return EXECUTION_SUCCESS;
 }
 
 static int initBuffer(AsmFile *asmfile)
@@ -79,14 +62,16 @@ static int initBuffer(AsmFile *asmfile)
 
   if (asmfile->buffer == nullptr)
     {
-      return -1; // ??
+      asmfile->err_code |= BUFFER_ALLOCATION_ERROR;
+
+      return BUFFER_ALLOCATION_ERROR;
     }
 
   fread(asmfile->buffer, sizeof(char), asmfile->cmd_file_size, asmfile->cmd_file);
 
   splitBuffer(asmfile);
 
-  return 0;
+  return EXECUTION_SUCCESS;
 }
 
 static void splitBuffer(AsmFile *asmfile)
@@ -99,7 +84,7 @@ static void splitBuffer(AsmFile *asmfile)
 
           if (asmfile->buffer[symb_cnt] == '\n')
             {
-              asmfile->tokens_num++; 
+              asmfile->commands_num++; 
             }
 
           asmfile->buffer[symb_cnt] = '\0';
@@ -111,6 +96,13 @@ static int initWordsArray(AsmFile *asmfile)
 {
   asmfile->words_arr = (char**)calloc(asmfile->words_num, sizeof(char*));
 
+  if (asmfile->words_arr == nullptr)
+    {
+      asmfile->err_code |= WORDS_ARR_ALLOCATION_ERROR;
+
+      return WORDS_ARR_ALLOCATION_ERROR;
+    }
+
   asmfile->words_arr[0] = asmfile->buffer;
   
   for (size_t symb_cnt = 0, words_cnt = 1; words_cnt < asmfile->words_num; symb_cnt++)
@@ -121,15 +113,22 @@ static int initWordsArray(AsmFile *asmfile)
         }
     }
 
-  return 0;
+  return EXECUTION_SUCCESS;
 }
 
-static int initTokensArray(AsmFile *asmfile)
+static int initCommandsArray(AsmFile *asmfile)
 {
   // sscanf("%d") работает для char !!
-  asmfile->tokens_arr = (Token*)calloc(asmfile->tokens_num, sizeof(Token));
+  asmfile->commands_arr = (Command*)calloc(asmfile->commands_num, sizeof(Command));
 
-  for (size_t tokens_cnt = 0, words_cnt = 0; tokens_cnt < asmfile->tokens_num;)
+  if (asmfile->commands_arr == nullptr)
+    {
+      asmfile->err_code |= COMMANDS_ARR_ALLOCATION_ERROR;
+
+      return COMMANDS_ARR_ALLOCATION_ERROR;
+    }
+
+  for (size_t commands_cnt = 0, words_cnt = 0; commands_cnt < asmfile->commands_num; commands_cnt++)
     {
       /*
       if (isspace(asmfile->words_arr[words_cnt][0]))
@@ -140,64 +139,75 @@ static int initTokensArray(AsmFile *asmfile)
         }
       */
 
-      asmfile->tokens_arr[tokens_cnt].code = identifyCmd(asmfile->words_arr[words_cnt++]);
+      asmfile->commands_arr[commands_cnt].code = identifyCommand(asmfile->words_arr[words_cnt++]);
 
-      int cmd_type = identifyCmdType(asmfile->tokens_arr[tokens_cnt].code, asmfile->words_arr[words_cnt]);
-      asmfile->tokens_arr[tokens_cnt].code |= cmd_type;
-
-      if (cmd_type != 0)
+      if (asmfile->commands_arr[commands_cnt].code == INVALID_COMMAND_ERROR)
         {
-          asmfile->tokens_arr[tokens_cnt].param = identifyCmdParam(asmfile->tokens_arr[tokens_cnt].code,
-                                                                asmfile->words_arr[words_cnt]);
-
-          words_cnt++;
+          asmfile->err_code |= INVALID_COMMAND_ERROR;
+          
+          return INVALID_COMMAND_ERROR;
         }
 
-      tokens_cnt++;
-//      printf("cmd = %d, type = %d, param = %d\n", asmfile->tokens_arr[tokens_cnt].code)
+
+      asmfile->commands_arr[commands_cnt].param = identifyParam(&asmfile->commands_arr[commands_cnt], 
+                                                                asmfile->words_arr[words_cnt]);
+
+      if (asmfile->commands_arr[commands_cnt].param == INVALID_PARAM_ERROR)
+        {
+          asmfile->err_code |= INVALID_PARAM_ERROR;
+
+          return INVALID_PARAM_ERROR;
+        }
+
+      if (CHECK_PARAM_TYPE(asmfile->commands_arr[commands_cnt].code) != NO_PARAM_TYPE)
+        {
+          words_cnt++;
+        }
     }
 
-  return 0;
+  return EXECUTION_SUCCESS;
 }
 
-static int identifyCmdType(int code, char *param)
+static int identifyParam(Command *cmd, char *param)
 {
-  if (code != push && code != pop)
+  if (cmd->code != push && cmd->code != pop)
     {
+      cmd->code |= NO_PARAM_TYPE;
+
       return 0;
     } 
 
-  if (isdigit(param[0]))
+  else if (isdigit(param[0]))
     {
-      return IMMEDIATE_CONST_MASK;
-    }
-  else if (strlen(param) == 3 && param[0] == 'r' && param[2] == 'x')
-    {
-//      printf("code = %d param = %s\n", code, param);
-      return REGISTER_MASK;
-    }
+      for (size_t i = 1; i < strlen(param); i++)
+        {
+          if (!isdigit(param[i]))
+            {
+              return INVALID_PARAM_ERROR;
+            }
+        }
 
-  return 0;
-}
+      cmd->code |= IMMEDIATE_CONST_TYPE;
 
-static int identifyCmdParam(int code, char *param)
-{
-  if ((code & CMD_TYPE_MASK) == IMMEDIATE_CONST_MASK)
-    {
       return atoi(param);
     }
-  else if ((code & CMD_TYPE_MASK) == REGISTER_MASK)
+
+  else if (strlen(param) == 3 && param[0] == 'r' && param[2] == 'x')
     {
-      if (strlen(param) == 3 && param[0] == 'r' && param[2] == 'x')
+      if (param[1] < 'a' || 'c' < param[1])
         {
-          return param[1] - 'a';
+          return INVALID_PARAM_ERROR;
         }
+
+      cmd->code |= REGISTER_TYPE;
+
+      return param[1] - 'a';
     }
 
-  return 0;
+  return INVALID_PARAM_ERROR;
 }
 
-static int identifyCmd(char *cmd)
+static int identifyCommand(char *cmd)
 {
   if (strcmp(cmd, "push") == 0) 
     {
@@ -244,27 +254,36 @@ static int identifyCmd(char *cmd)
       return sqrt;
     }
   
-  return 0;
+  return INVALID_COMMAND_ERROR;
 }
 
-void outputAsmFile(AsmFile *asmfile)
+int outputAsmFile(AsmFile *asmfile)
 {
-  FILE *asmout = fopen("asm_file.txt", "w");
+  FILE *asmout = fopen("bytecode_file.txt", "w");
 
-  for (size_t tokens_cnt = 0; tokens_cnt < asmfile->tokens_num; tokens_cnt++)
+  if (asmout == nullptr)
     {
-      if ((asmfile->tokens_arr[tokens_cnt].code & CMD_TYPE_MASK) == 0)
+      asmfile->err_code |= WRITE_BYTE_CODE_FILE_ERROR;
+
+      return WRITE_BYTE_CODE_FILE_ERROR;
+    }
+
+  for (size_t commands_cnt = 0; commands_cnt < asmfile->commands_num; commands_cnt++)
+    {
+      if (CHECK_PARAM_TYPE(asmfile->commands_arr[commands_cnt].code) == NO_PARAM_TYPE)
         {
-          fprintf(asmout, "%d\n", asmfile->tokens_arr[tokens_cnt].code & CMD_MASK);
+          fprintf(asmout, "%d\n", CHECK_CMD(asmfile->commands_arr[commands_cnt].code));
         }
       else
         {
-          fprintf(asmout, "%d %d\n", asmfile->tokens_arr[tokens_cnt].code & CMD_MASK,
-                                     asmfile->tokens_arr[tokens_cnt].param);
+          fprintf(asmout, "%d %d\n", CHECK_CMD(asmfile->commands_arr[commands_cnt].code),
+                                     asmfile->commands_arr[commands_cnt].param);
         }
     }
 
   fclose(asmout);
+
+  return EXECUTION_SUCCESS;
 }
 
 int asmFileDtor(AsmFile *asmfile)
@@ -274,14 +293,14 @@ int asmFileDtor(AsmFile *asmfile)
       fclose(asmfile->cmd_file);
     }
 
+  asmfile->cmd_file_size = 0;
   asmfile->words_num = 0;
-  asmfile->tokens_num = 0;
+  asmfile->commands_num = 0;
   asmfile->err_code = 0;
 
   free(asmfile->buffer);
   free(asmfile->words_arr);
-  free(asmfile->tokens_arr);
+  free(asmfile->commands_arr);
 
-  return 0;
+  return EXECUTION_SUCCESS;
 }
-

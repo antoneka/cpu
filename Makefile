@@ -14,17 +14,23 @@ CFLAGS=-D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-
 		integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,$\
 		shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
-TARGET=stack_cpu
-
 OBJ_DIR=.obj
 $(shell mkdir -p $(OBJ_DIR))
 
-SRC=$(wildcard stack/src/*.cpp)
-OBJ=$(patsubst stack/src/%.cpp, $(OBJ_DIR)/%.o, $(SRC))
+TARGET_ASM=assembler
+SRC_ASM=$(wildcard assembler/*.cpp include/common.cpp)
+OBJ_ASM=$(patsubst assembler/%.cpp include/%.cpp, $(OBJ_DIR)/%.o, $(SRC_ASM))
 
 .PHONY: clean
 
-all: stack
+all: assembler
+
+assembler: $(OBJ_ASM)
+	$(CC) $^ -o $(TARGET_ASM)
+
+$(OBJ_DIR)/%.o: assembler/%.cpp include/common.cpp
+	$(CC) -c $< -o $@
+
 
 stack: $(OBJ)
 	$(CC) $^ -o $(TARGET)
@@ -33,4 +39,4 @@ $(OBJ_DIR)/%.o: stack/src/%.cpp
 	$(CC) -I./stack/include/ -c $< -o $@
 
 clean: 
-	rm -rf $(TARGET) $(OBJ_DIR) stack_log.txt
+	rm -rf 

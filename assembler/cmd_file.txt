@@ -2,3 +2,4 @@ push 3
 pop 5
 HLT
 pop rcx
+push rbx

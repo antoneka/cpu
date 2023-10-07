@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "stdio.h"
+
 enum Commands 
 {
   push    =  1,
@@ -16,5 +18,9 @@ enum Commands
   sin     = 11,
   cos     = 12,
 };
+
+//=========================================================================================================
+
+size_t getFileSize(const char *filename);
 
 #endif // COMMON_H
