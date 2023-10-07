@@ -1,6 +1,5 @@
 #include "assembler.h"
 
-//=========================================================================================================
 
 static int initBuffer(AsmFile *asmfile);
 
@@ -14,7 +13,6 @@ static int identifyCommand(char *cmd);
 
 static int identifyParam(Command *cmd, char *param);
 
-//=========================================================================================================
 
 int asmFileCtor(AsmFile *asmfile)
 {
@@ -54,6 +52,7 @@ int asmFileCtor(AsmFile *asmfile)
   return EXECUTION_SUCCESS;
 }
 
+
 static int initBuffer(AsmFile *asmfile)
 {
   asmfile->cmd_file_size = getFileSize("cmd_file.txt");
@@ -74,6 +73,7 @@ static int initBuffer(AsmFile *asmfile)
   return EXECUTION_SUCCESS;
 }
 
+
 static void splitBuffer(AsmFile *asmfile)
 {
   for (size_t symb_cnt = 0; symb_cnt < asmfile->cmd_file_size; symb_cnt++) 
@@ -91,6 +91,7 @@ static void splitBuffer(AsmFile *asmfile)
         } 
     }
 }
+
 
 static int initWordsArray(AsmFile *asmfile)
 {
@@ -115,6 +116,7 @@ static int initWordsArray(AsmFile *asmfile)
 
   return EXECUTION_SUCCESS;
 }
+
 
 static int initCommandsArray(AsmFile *asmfile)
 {
@@ -168,9 +170,10 @@ static int initCommandsArray(AsmFile *asmfile)
   return EXECUTION_SUCCESS;
 }
 
+
 static int identifyParam(Command *cmd, char *param)
 {
-  if (cmd->code != push && cmd->code != pop)
+  if (cmd->code != PUSH && cmd->code != POP)
     {
       cmd->code |= NO_PARAM_TYPE;
 
@@ -207,55 +210,61 @@ static int identifyParam(Command *cmd, char *param)
   return INVALID_PARAM_ERROR;
 }
 
+
 static int identifyCommand(char *cmd)
 {
-  if (strcmp(cmd, "push") == 0) 
+  if (strcasecmp(cmd, "push") == 0) 
     {
-      return push;
+      return PUSH;
     }
-  else if (strcmp(cmd, "pop") == 0) 
+  else if (strcasecmp(cmd, "pop") == 0) 
     {
-      return pop;
+      return POP;
     }
-  else if (strcmp(cmd, "HLT") == 0) 
+  else if (strcasecmp(cmd, "hlt") == 0) 
     {
       return HLT;
     }
-  else if (strcmp(cmd, "in") == 0) 
+  else if (strcasecmp(cmd, "in") == 0) 
     {
-      return in;
+      return IN;
     }
-  else if (strcmp(cmd, "out") == 0) 
+  else if (strcasecmp(cmd, "out") == 0) 
     {
-      return out;
+      return OUT;
     }
-  else if (strcmp(cmd, "out") == 0) 
+  else if (strcasecmp(cmd, "add") == 0) 
     {
-      return out;
+      return ADD;
     }
-  else if (strcmp(cmd, "add") == 0) 
+  else if (strcasecmp(cmd, "sub") == 0) 
     {
-      return add;
+      return SUB;
     }
-  else if (strcmp(cmd, "sub") == 0) 
+  else if (strcasecmp(cmd, "mul") == 0) 
     {
-      return sub;
+      return MUL;
     }
-  else if (strcmp(cmd, "mul") == 0) 
+  else if (strcasecmp(cmd, "div") == 0) 
     {
-      return mul;
+      return DIV;
     }
-  else if (strcmp(cmd, "divide") == 0) 
+  else if (strcasecmp(cmd, "sqrt") == 0) 
     {
-      return divide;
+      return SQRT;
     }
-  else if (strcmp(cmd, "sqrt") == 0) 
+  else if (strcasecmp(cmd, "sin") == 0) 
     {
-      return sqrt;
+      return SIN;
+    }
+  else if (strcasecmp(cmd, "cos") == 0) 
+    {
+      return COS;
     }
   
   return INVALID_COMMAND_ERROR;
 }
+
 
 int outputAsmFile(AsmFile *asmfile)
 {
@@ -263,9 +272,9 @@ int outputAsmFile(AsmFile *asmfile)
 
   if (asmout == nullptr)
     {
-      asmfile->err_code |= WRITE_BYTE_CODE_FILE_ERROR;
+      asmfile->err_code |= WRITE_BYTECODE_FILE_ERROR;
 
-      return WRITE_BYTE_CODE_FILE_ERROR;
+      return WRITE_BYTECODE_FILE_ERROR;
     }
 
   for (size_t commands_cnt = 0; commands_cnt < asmfile->commands_num; commands_cnt++)
@@ -285,6 +294,7 @@ int outputAsmFile(AsmFile *asmfile)
 
   return EXECUTION_SUCCESS;
 }
+
 
 int asmFileDtor(AsmFile *asmfile)
 {

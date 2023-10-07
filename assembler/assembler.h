@@ -49,7 +49,7 @@ enum ExecutionStatus
   WORDS_ARR_ALLOCATION_ERROR    = 1 << 1,
   COMMANDS_ARR_ALLOCATION_ERROR = 1 << 2,
   OPEN_CMD_FILE_ERROR           = 1 << 3,
-  WRITE_BYTE_CODE_FILE_ERROR    = 1 << 4,
+  WRITE_BYTECODE_FILE_ERROR     = 1 << 4,
   INVALID_COMMAND_ERROR         = 1 << 29,
   INVALID_PARAM_ERROR           = 1 << 30,
 };
