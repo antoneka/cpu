@@ -4,7 +4,7 @@
 
 static int initBuffer(AsmFile *asmfile);
 
-static void splitBuffer(AsmFile *asmfile);
+static void splitCommandBuffer(AsmFile *asmfile);
 
 static int initWordArray(AsmFile *asmfile);
 
@@ -27,7 +27,7 @@ int asmFileCtor(AsmFile *asmfile)
       return OPEN_CMD_FILE_ERROR;
     }
 
-  asmfile->buffer = nullptr;
+  asmfile->command_buffer = nullptr;
   asmfile->word_arr = nullptr;
   asmfile->command_arr = nullptr;
   asmfile->cmd_file_size = 0;
@@ -65,49 +65,49 @@ static int initBuffer(AsmFile *asmfile)
 {
   asmfile->cmd_file_size = getFileSize("cmd_file.txt");
 
-  asmfile->buffer = (char*)calloc(asmfile->cmd_file_size, sizeof(char));
+  asmfile->command_buffer = (char*)calloc(asmfile->cmd_file_size, sizeof(char));
 
-  if (asmfile->buffer == nullptr)
+  if (asmfile->command_buffer == nullptr)
     {
       asmfile->err_code |= BUFFER_ALLOCATION_ERROR;
 
       return BUFFER_ALLOCATION_ERROR;
     }
 
-  fread(asmfile->buffer, sizeof(char), asmfile->cmd_file_size, asmfile->cmd_file);
+  fread(asmfile->command_buffer, sizeof(char), asmfile->cmd_file_size, asmfile->cmd_file);
 
-  splitBuffer(asmfile);
+  splitCommandBuffer(asmfile);
 
   return EXECUTION_SUCCESS;
 }
 
 //#########################################################################################################
 
-static void splitBuffer(AsmFile *asmfile)
+static void splitCommandBuffer(AsmFile *asmfile)
 {
-  if (isspace(asmfile->buffer[0]))
+  if (isspace(asmfile->command_buffer[0]))
     {
-      asmfile->buffer[0] = '\0';
+      asmfile->command_buffer[0] = '\0';
     }
   
   for (size_t symb_cnt = 1; symb_cnt < asmfile->cmd_file_size; symb_cnt++) 
     {
-      if (isspace(asmfile->buffer[symb_cnt]) && asmfile->buffer[symb_cnt - 1] == '\0')
+      if (isspace(asmfile->command_buffer[symb_cnt]) && asmfile->command_buffer[symb_cnt - 1] == '\0')
         {
-          asmfile->buffer[symb_cnt] = '\0';
+          asmfile->command_buffer[symb_cnt] = '\0';
           continue;
         }
 
-      else if (isspace(asmfile->buffer[symb_cnt]))
+      else if (isspace(asmfile->command_buffer[symb_cnt]))
         {
           asmfile->words_num++;
 
-          if (asmfile->buffer[symb_cnt] == '\n')
+          if (asmfile->command_buffer[symb_cnt] == '\n')
             {
               asmfile->commands_num++; 
             }
 
-          asmfile->buffer[symb_cnt] = '\0';
+          asmfile->command_buffer[symb_cnt] = '\0';
         } 
     }
 }
@@ -127,18 +127,18 @@ static int initWordArray(AsmFile *asmfile)
 
   size_t symb_cnt = 0;
 
-  while(asmfile->buffer[symb_cnt] == '\0')
+  while(asmfile->command_buffer[symb_cnt] == '\0')
     {
       symb_cnt++;
     }
 
-  asmfile->word_arr[0] = asmfile->buffer + symb_cnt;
+  asmfile->word_arr[0] = asmfile->command_buffer + symb_cnt;
   
   for (size_t words_cnt = 1; words_cnt < asmfile->words_num; symb_cnt++)
     {
-      if (asmfile->buffer[symb_cnt] == '\0' && asmfile->buffer[symb_cnt + 1] != '\0')
+      if (asmfile->command_buffer[symb_cnt] == '\0' && asmfile->command_buffer[symb_cnt + 1] != '\0')
         {
-          asmfile->word_arr[words_cnt++] = asmfile->buffer + symb_cnt + 1;
+          asmfile->word_arr[words_cnt++] = asmfile->command_buffer + symb_cnt + 1;
         }
     }
 
@@ -191,6 +191,7 @@ static int initCommandArray(AsmFile *asmfile)
 
 //########################################################################################################
 
+//TODO: pop arg 
 static int identifyParam(Command *cmd, char *param)
 {
   if (cmd->code != PUSH && cmd->code != POP)
@@ -299,7 +300,7 @@ int asmFileDtor(AsmFile *asmfile)
   asmfile->commands_num = 0;
   asmfile->err_code = 0;
 
-  free(asmfile->buffer);
+  free(asmfile->command_buffer);
   free(asmfile->word_arr);
   free(asmfile->command_arr);
 

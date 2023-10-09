@@ -6,10 +6,8 @@
 #include "../include/common.h"
 #include <assert.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <string.h> 
 #include <stdlib.h>
-#include <sys/stat.h>
 
 //#########################################################################################################
 
@@ -29,7 +27,7 @@ struct AsmFile
   FILE *cmd_file;
   size_t cmd_file_size;
 
-  char *buffer;
+  char *command_buffer;
   
   char **word_arr;
   size_t words_num;
@@ -38,25 +36,6 @@ struct AsmFile
   size_t commands_num;
 
   int err_code;
-};
-
-enum ParamTypes
-{
-  IMMEDIATE_CONST_TYPE          = 1 << 4,
-  REGISTER_TYPE                 = 1 << 5,
-  NO_PARAM_TYPE                 =      0,
-};
-
-enum ExecutionStatus
-{
-  EXECUTION_SUCCESS             =      0,
-  BUFFER_ALLOCATION_ERROR       = 1 << 0,
-  WORD_ARR_ALLOCATION_ERROR    = 1 << 1,
-  COMMAND_ARR_ALLOCATION_ERROR = 1 << 2,
-  OPEN_CMD_FILE_ERROR           = 1 << 3,
-  WRITE_BYTECODE_FILE_ERROR     = 1 << 4,
-  INVALID_COMMAND_ERROR         = 1 << 29,
-  INVALID_PARAM_ERROR           = 1 << 30,
 };
 
 //#########################################################################################################
