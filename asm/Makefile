@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-std=c++17 -Wall -Werror -Wextra
+CFLAGS=-std=c++17 -Wall -Werror -Wextra 
 SRC=*.cpp ../include/common.cpp
 TARGET=asm
 

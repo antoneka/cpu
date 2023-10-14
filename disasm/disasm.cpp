@@ -1,10 +1,12 @@
-#include "disassembler.h"
+#include "disasm.h"
 
 //#########################################################################################################
 
 static int initByteCodeBuffer(DisAsmFile *disasmfile);
 
 static void splitByteCodeBuffer(DisAsmFile *disasmfile);
+
+static int printCommand(int cmd, int param, int nums_read, FILE *output_disasm);
 
 //#########################################################################################################
 
@@ -19,7 +21,6 @@ int disAsmFileCtor(DisAsmFile *disasmfile)
       return OPEN_BYTECODE_FILE_ERROR;
     }
 
-  disasmfile->bytecode_buffer = nullptr;
   disasmfile->bytecode_file_size = 0;
   disasmfile->err_code = 0;
 
@@ -79,7 +80,9 @@ int outputDisAsmFile(DisAsmFile *disasmfile)
       disasmfile->err_code |= WRITE_DISASM_FILE_ERROR;
     }
 
-  for (size_t symb_cnt = 0; symb_cnt < disasmfile->bytecode_file_size;)
+  size_t symb_cnt = 0;
+
+  while (symb_cnt < disasmfile->bytecode_file_size)
     {
       int cmd = 0;
       int param = 0;
@@ -88,101 +91,120 @@ int outputDisAsmFile(DisAsmFile *disasmfile)
 
       if (nums_read == 0)
         {
+          if (disasmfile->bytecode_buffer[symb_cnt] == '\0')
+            {
+              symb_cnt++;
+              continue;
+            }
+
           disasmfile->err_code |= INVALID_COMMAND_ERROR;
 
           return INVALID_COMMAND_ERROR;
         }
 
-      if (CHECK_CMD(cmd) == PUSH)
+
+      int print_status = printCommand(cmd, param, nums_read, output_disasm);
+
+      if (print_status != EXECUTION_SUCCESS)
         {
-          if (nums_read == 1)
-            {
-              disasmfile->err_code |= INVALID_PARAM_ERROR;
+          disasmfile->err_code |= print_status;
 
-              return INVALID_PARAM_ERROR;
-            }
-
-          fprintf(output_disasm, "%s ", "push");
-
-          if (CHECK_PARAM_TYPE(cmd) == REGISTER_TYPE)
-            {
-              fprintf(output_disasm, "r%cx\n", param + 'a');
-            }
-          else if (CHECK_PARAM_TYPE(cmd) == IMMEDIATE_CONST_TYPE)
-            {
-              fprintf(output_disasm, "%d\n", param);
-            }
-        } 
-
-      else if (CHECK_CMD(cmd) == POP)
-        {
-          if (nums_read == 1)
-            {
-              disasmfile->err_code |= INVALID_PARAM_ERROR;
-
-              return INVALID_PARAM_ERROR;
-            }
-
-          fprintf(output_disasm, "%s ", "pop");
-
-          if (CHECK_PARAM_TYPE(cmd) == REGISTER_TYPE)
-            {
-              fprintf(output_disasm, "r%cx\n", param + 'a');
-            }
-        } 
-
-      else if (CHECK_CMD(cmd) == IN)
-        {
-          fprintf(output_disasm, "%s\n", "in");
-        } 
-
-      else if (CHECK_CMD(cmd) == HLT)
-        {
-          fprintf(output_disasm, "%s\n", "HLT");
-        } 
-
-      else if (CHECK_CMD(cmd) == OUT)
-        {
-          fprintf(output_disasm, "%s\n", "out");
-        } 
-
-      else if (CHECK_CMD(cmd) == ADD)
-        {
-          fprintf(output_disasm, "%s\n", "add");
-        } 
-
-      else if (CHECK_CMD(cmd) == SUB)
-        {
-          fprintf(output_disasm, "%s\n", "sub");
-        } 
-
-      else if (CHECK_CMD(cmd) == MUL)
-        {
-          fprintf(output_disasm, "%s\n", "mul");
-        } 
-
-      else if (CHECK_CMD(cmd) == DIV)
-        {
-          fprintf(output_disasm, "%s\n", "div");
-        } 
-
-      else if (CHECK_CMD(cmd) == SQRT)
-        {
-          fprintf(output_disasm, "%s\n", "sqrt");
-        } 
-
-      else if (CHECK_CMD(cmd) == SIN)
-        {
-          fprintf(output_disasm, "%s\n", "sin");
-        } 
-
-      else if (CHECK_CMD(cmd) == COS)
-        {
-          fprintf(output_disasm, "%s\n", "cos");
-        } 
+          return print_status;
+        }
 
       symb_cnt += strlen(disasmfile->bytecode_buffer + symb_cnt) + 1;
     }
+
+  return EXECUTION_SUCCESS;
+}
+
+//#########################################################################################################
+
+static int printCommand(int cmd, int param, int nums_read, FILE *output_disasm)
+{
+  if (GET_CMD(cmd) == PUSH)
+    {
+      if (nums_read == 1)
+        {
+          return INVALID_PARAM_ERROR;
+        }
+
+      fprintf(output_disasm, "%s ", "push");
+
+      if (GET_PARAM_TYPE(cmd) == REGISTER_TYPE)
+        {
+          fprintf(output_disasm, "r%cx\n", param + 'a');
+        }
+      else if (GET_PARAM_TYPE(cmd) == IMMEDIATE_CONST_TYPE)
+        {
+          fprintf(output_disasm, "%d\n", param);
+        }
+    } 
+
+  else if (GET_CMD(cmd) == POP)
+   {
+      if (nums_read == 1)
+        {
+          return INVALID_PARAM_ERROR;
+        }
+
+      fprintf(output_disasm, "%s ", "pop");
+
+      if (GET_PARAM_TYPE(cmd) == REGISTER_TYPE)
+        {
+          fprintf(output_disasm, "r%cx\n", param + 'a');
+        }
+    } 
+
+  else if (GET_CMD(cmd) == IN)
+    {
+      fprintf(output_disasm, "%s\n", "in");
+    } 
+
+  else if (GET_CMD(cmd) == HLT)
+    {
+      fprintf(output_disasm, "%s\n", "HLT");
+    } 
+
+  else if (GET_CMD(cmd) == OUT)
+    {
+      fprintf(output_disasm, "%s\n", "out");
+    } 
+
+  else if (GET_CMD(cmd) == ADD)
+    {
+      fprintf(output_disasm, "%s\n", "add");
+    } 
+
+  else if (GET_CMD(cmd) == SUB)
+    {
+      fprintf(output_disasm, "%s\n", "sub");
+    } 
+
+  else if (GET_CMD(cmd) == MUL)
+    {
+      fprintf(output_disasm, "%s\n", "mul");
+    } 
+
+  else if (GET_CMD(cmd) == DIV)
+    {
+      fprintf(output_disasm, "%s\n", "div");
+    } 
+
+  else if (GET_CMD(cmd) == SQRT)
+    {
+      fprintf(output_disasm, "%s\n", "sqrt");
+    } 
+
+  else if (GET_CMD(cmd) == SIN)
+    {
+      fprintf(output_disasm, "%s\n", "sin");
+    } 
+
+  else if (GET_CMD(cmd) == COS)
+    {
+      fprintf(output_disasm, "%s\n", "cos");
+    } 
 
   return EXECUTION_SUCCESS;
 }

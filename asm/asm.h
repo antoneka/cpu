@@ -11,11 +11,6 @@
 
 //#########################################################################################################
 
-#define CHECK_CMD(code) ((code) & 0b00001111)
-#define CHECK_PARAM_TYPE(code) ((code) & 0b11110000)
-
-//#########################################################################################################
-
 struct Command
 {
   int code;
@@ -27,13 +22,13 @@ struct AsmFile
   FILE *cmd_file;
   size_t cmd_file_size;
 
-  char *command_buffer;
+  char *cmd_buff;
   
   char **word_arr;
   size_t words_num;
 
-  Command *command_arr;
-  size_t commands_num;
+  Command *cmd_arr;
+  size_t cmds_num;
 
   int err_code;
 };

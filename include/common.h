@@ -7,8 +7,8 @@
 
 //#########################################################################################################
 
-#define CHECK_CMD(code) ((code) & 0b00001111)
-#define CHECK_PARAM_TYPE(code) ((code) & 0b11110000)
+#define GET_CMD(code) ((code) & 0b00001111)
+#define GET_PARAM_TYPE(code) ((code) & 0b11110000)
 
 //#########################################################################################################
 
@@ -21,9 +21,9 @@ enum ParamTypes
 
 enum Commands 
 {
+  HLT     =  0,
   PUSH    =  1,
   POP     =  2,
-  HLT     =  3,
   IN      =  4,
   OUT     =  5,
   ADD     =  6, 
@@ -35,8 +35,9 @@ enum Commands
   COS     = 12,
 };
 
-enum ExecutionStatus
+enum ExecStatus
 {
+  // assembler 
   EXECUTION_SUCCESS             =       0,
   BUFFER_ALLOCATION_ERROR       = 1 <<  0,
   WORD_ARR_ALLOCATION_ERROR     = 1 <<  1,
@@ -46,8 +47,24 @@ enum ExecutionStatus
   INVALID_COMMAND_ERROR         = 1 << 29,
   INVALID_PARAM_ERROR           = 1 << 30,
 
+  // disassembler
   OPEN_BYTECODE_FILE_ERROR      = 1 <<  5,
   WRITE_DISASM_FILE_ERROR       = 1 <<  6,
+
+  // stack
+  STACK_ALLOCATION_ERROR        = 1 <<  7,
+  STACK_CAPACITY_ERROR          = 1 <<  8,
+  STACK_SIZE_ERROR              = 1 <<  9,
+  LEFT_CANARY_STACK_CORRUPTED   = 1 << 10,
+  RIGHT_CANARY_STACK_CORRUPTED  = 1 << 11,
+  LEFT_CANARY_DATA_CORRUPTED    = 1 << 12,
+  RIGHT_CANARY_DATA_CORRUPTED   = 1 << 13,
+  STACK_REALLOCATION_ERROR      = 1 << 14,
+  STACK_ALREADY_CONSTRUCTED     = 1 << 15,
+  STACK_ALREADY_DESTRUCTED      = 1 << 16,
+  STACK_PTR_IS_NULL             = 1 << 17,
+  POPVALUE_PTR_IS_NULL          = 1 << 18,
+  HASH_CORRUPTED                = 1 << 19,
 };
 
 //#########################################################################################################

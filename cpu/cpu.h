@@ -6,11 +6,15 @@
 
 struct CPU
 {
+  FILE *bin_file;
   Stack *stk;
-  FILE *input_file;
 
+  int *buffer;
+  size_t buf_size;
+  int *regs;
 
-
+  size_t pc;
+  int err_code;
 };
 
 #endif
