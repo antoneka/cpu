@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <string.h> 
+#include <stdio.h>
 #include <stdlib.h>
 
 //#########################################################################################################
@@ -39,6 +40,8 @@ int asmFileCtor(AsmFile *asmfile);
 
 int asmFileDtor(AsmFile *asmfile);
 
-int outputAsmFile(AsmFile *asmfile);
+int outputByteCodeFile(AsmFile *asmfile);
+
+int outputBinFile(AsmFile *asmfile);
 
 #endif // ASSEMBLER_H

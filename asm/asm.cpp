@@ -10,7 +10,7 @@ static int initWordArray(AsmFile *asmfile);
 
 static int initCommandArray(AsmFile *asmfile);
 
-static int getParam(char *word, Command *cmd);
+static int getParam(char *param, Command *cmd);
 
 //#########################################################################################################
 
@@ -200,33 +200,33 @@ static int initCommandArray(AsmFile *asmfile)
 
 //########################################################################################################
 
-static int getParam(char *word, Command *cmd)
+static int getParam(char *param, Command *cmd)
 {
-  if (isdigit(word[0]))
+  if (isdigit(param[0]))
     {
-      for (size_t i = 1; i < strlen(word); i++)
+      for (size_t i = 1; i < strlen(param); i++)
         {
-          if (!isdigit(word[i])) 
+          if (!isdigit(param[i])) 
             { 
               return INVALID_PARAM_ERROR; 
             }
         }
 
       cmd->code |= IMMEDIATE_CONST_TYPE;
-      cmd->param = atoi(word);
+      cmd->param = atoi(param);
       
       return EXECUTION_SUCCESS;
     }
 
-  else if (strlen(word) == 3 && word[0] == 'r' && word[2] == 'x')
+  else if (strlen(param) == 3 && param[0] == 'r' && param[2] == 'x')
     {
-      if (word[1] < 'a' || 'c' < word[1]) 
+      if (param[1] < 'a' || 'c' < param[1]) 
         { 
           return INVALID_PARAM_ERROR; 
         }
 
       cmd->code |= REGISTER_TYPE;
-      cmd->param = word[1] - 'a';
+      cmd->param = param[1] - 'a';
 
       return EXECUTION_SUCCESS;
     }
@@ -236,13 +236,13 @@ static int getParam(char *word, Command *cmd)
 
 //########################################################################################################
 
-int outputAsmFile(AsmFile *asmfile)
+int outputByteCodeFile(AsmFile *asmfile)
 {
   assert(asmfile != nullptr);
 
-  FILE *asmout = fopen("bytecode_file.txt", "w");
+  FILE *bytecode_file = fopen("bytecode_file.txt", "w");
 
-  if (asmout == nullptr)
+  if (bytecode_file == nullptr)
     {
       asmfile->err_code |= WRITE_BYTECODE_FILE_ERROR;
 
@@ -253,17 +253,60 @@ int outputAsmFile(AsmFile *asmfile)
 
   for (size_t cmd_cnt = 0; cmd_cnt < asmfile->cmds_num; cmd_cnt++)
     {
-      fprintf(asmout, "%d", cmd_arr[cmd_cnt].code);
+      fprintf(bytecode_file, "%d", cmd_arr[cmd_cnt].code);
 
       if (GET_PARAM_TYPE(cmd_arr[cmd_cnt].code) != NO_PARAM_TYPE)
         {
-          fprintf(asmout, " %d", cmd_arr[cmd_cnt].param);
+          fprintf(bytecode_file, " %d", cmd_arr[cmd_cnt].param);
         }
 
-      fprintf(asmout, "\n");
+      fprintf(bytecode_file, "\n");
     }
 
-  fclose(asmout);
+  fclose(bytecode_file);
+
+  return EXECUTION_SUCCESS;
+}
+
+//########################################################################################################
+
+int outputBinFile(AsmFile *asmfile)
+{
+  assert(asmfile != nullptr);
+
+  FILE *bin_file = fopen("asm_file.bin", "wb");
+
+  if (bin_file == nullptr)
+    {
+      asmfile->err_code |= WRITE_BIN_FILE_ERROR;
+
+      return WRITE_BIN_FILE_ERROR;
+    }
+
+  int *binary_code_arr = (int*)calloc(asmfile->words_num, sizeof(int));
+
+  if (binary_code_arr == nullptr)
+    {
+      asmfile->err_code |= BINARY_ARR_ALLOCATION_ERROR;
+
+      return BINARY_ARR_ALLOCATION_ERROR;
+    }
+
+  Command *cmd_arr = asmfile->cmd_arr;
+
+  for (size_t tokens_cnt = 0, cmd_cnt = 0; tokens_cnt < asmfile->words_num; cmd_cnt++)
+    {
+      binary_code_arr[tokens_cnt++] = cmd_arr[cmd_cnt].code;
+
+      if (GET_PARAM_TYPE(cmd_arr[cmd_cnt].code) != NO_PARAM_TYPE)
+        {
+          binary_code_arr[tokens_cnt++] = cmd_arr[cmd_cnt].param;
+        }
+    }
+
+  fwrite(binary_code_arr, sizeof(int), asmfile->words_num, bin_file);
+
+  fclose(bin_file);
 
   return EXECUTION_SUCCESS;
 }
@@ -277,6 +320,7 @@ int asmFileDtor(AsmFile *asmfile)
   if (asmfile->cmd_file != nullptr) 
     {
       fclose(asmfile->cmd_file);
+      asmfile->cmd_file = nullptr;
     }
 
   asmfile->cmd_file_size = 0;
@@ -285,8 +329,13 @@ int asmFileDtor(AsmFile *asmfile)
   asmfile->err_code = 0;
 
   free(asmfile->cmd_buff);
+  asmfile->cmd_buff = nullptr;
+
   free(asmfile->word_arr);
+  asmfile->word_arr = nullptr;
+
   free(asmfile->cmd_arr);
+  asmfile->cmd_arr = nullptr;
 
   return EXECUTION_SUCCESS;
 }

@@ -46,6 +46,8 @@ enum ExecStatus
   WRITE_BYTECODE_FILE_ERROR     = 1 <<  4,
   INVALID_COMMAND_ERROR         = 1 << 29,
   INVALID_PARAM_ERROR           = 1 << 30,
+  BINARY_ARR_ALLOCATION_ERROR   = 1 << 20,
+  WRITE_BIN_FILE_ERROR          = 1 << 21,
 
   // disassembler
   OPEN_BYTECODE_FILE_ERROR      = 1 <<  5,

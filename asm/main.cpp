@@ -1,4 +1,4 @@
-#include "assembler.h"
+#include "asm.h"
 
 int main()
 {
@@ -6,7 +6,9 @@ int main()
 
   asmFileCtor(&asmfile);
 
-  outputAsmFile(&asmfile);
+  outputByteCodeFile(&asmfile);
+
+  outputBinFile(&asmfile);
 
   asmFileDtor(&asmfile);
 

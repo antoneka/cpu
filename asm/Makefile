@@ -11,4 +11,4 @@ asm: $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 
 clean: 
-	rm -f $(TARGET) bytecode_file.txt
+	rm -f $(TARGET) bytecode_file.txt asm_file.bin
