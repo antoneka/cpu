@@ -46,31 +46,31 @@ enum ExecStatus
   WRITE_BYTECODE_FILE_ERROR     = 1 <<  4,
   INVALID_COMMAND_ERROR         = 1 << 29,
   INVALID_PARAM_ERROR           = 1 << 30,
-  BINARY_ARR_ALLOCATION_ERROR   = 1 << 20,
-  WRITE_BIN_FILE_ERROR          = 1 << 21,
+  BINARY_ARR_ALLOCATION_ERROR   = 1 <<  5,
+  WRITE_BIN_FILE_ERROR          = 1 <<  6,
 
   // disassembler
-  OPEN_BYTECODE_FILE_ERROR      = 1 <<  5,
-  WRITE_DISASM_FILE_ERROR       = 1 <<  6,
+  OPEN_BYTECODE_FILE_ERROR      = 1 <<  7,
+  WRITE_DISASM_FILE_ERROR       = 1 <<  8,
 
   // stack
-  STACK_ALLOCATION_ERROR        = 1 <<  7,
-  STACK_CAPACITY_ERROR          = 1 <<  8,
-  STACK_SIZE_ERROR              = 1 <<  9,
-  LEFT_CANARY_STACK_CORRUPTED   = 1 << 10,
-  RIGHT_CANARY_STACK_CORRUPTED  = 1 << 11,
-  LEFT_CANARY_DATA_CORRUPTED    = 1 << 12,
-  RIGHT_CANARY_DATA_CORRUPTED   = 1 << 13,
-  STACK_REALLOCATION_ERROR      = 1 << 14,
-  STACK_ALREADY_CONSTRUCTED     = 1 << 15,
-  STACK_ALREADY_DESTRUCTED      = 1 << 16,
-  STACK_PTR_IS_NULL             = 1 << 17,
-  POPVALUE_PTR_IS_NULL          = 1 << 18,
-  HASH_CORRUPTED                = 1 << 19,
+  STACK_ALLOCATION_ERROR        = 1 <<  9,
+  STACK_CAPACITY_ERROR          = 1 << 10,
+  STACK_SIZE_ERROR              = 1 << 11,
+  LEFT_CANARY_STACK_CORRUPTED   = 1 << 12,
+  RIGHT_CANARY_STACK_CORRUPTED  = 1 << 13,
+  LEFT_CANARY_DATA_CORRUPTED    = 1 << 14,
+  RIGHT_CANARY_DATA_CORRUPTED   = 1 << 15,
+  STACK_REALLOCATION_ERROR      = 1 << 16,
+  STACK_ALREADY_CONSTRUCTED     = 1 << 17,
+  STACK_ALREADY_DESTRUCTED      = 1 << 18,
+  STACK_PTR_IS_NULL             = 1 << 19,
+  POPVALUE_PTR_IS_NULL          = 1 << 20,
+  HASH_CORRUPTED                = 1 << 21,
 };
 
 //#########################################################################################################
 
-size_t getFileSize(const char *filename);
+size_t getFileSize(FILE *file);
 
 #endif // COMMON_H

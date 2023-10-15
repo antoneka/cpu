@@ -1,20 +1,20 @@
-#define DO_PUSH(arg) stackPush(stk, arg)
-#define DO_POP(arg)  stackPop(stk, arg)
-#define REGS         cpu->regs
+#define DO_PUSH(elem) stackPush(stk, elem)
+#define DO_POP(var)   stackPop(stk, var)
+#define REGS          cpu->regs
 
 DEF_CMD(HLT, 0, 
   {
-
+    return 0;
   })
 
 DEF_CMD(PUSH, 1, 
   {
-    DO_PUSH();
+    DO_PUSH(param);
   })
 
 DEF_CMD(POP, 1, 
   {
-
+    DO_POP(param_ptr)
   })
     
 DEF_CMD(IN, 0, 
@@ -27,7 +27,8 @@ DEF_CMD(IN, 0,
 
 DEF_CMD(OUT, 0, 
   {
-
+    printf("CPU OUT:\n");
+    STACK_DUMP(stk, stdout);
   })
 
 DEF_CMD(ADD, 0, 

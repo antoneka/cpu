@@ -3,18 +3,20 @@
 #include <stdlib.h>
 
 static int initBuffer(CPU *cpu);
+int getParam(CPU *cpu, elem_t **param);
 
 int spuCtor(CPU *cpu)
 {
-  cpu->bin_file = fopen("bytecode_file", "rb");
+  cpu->bin_file = fopen("asm_file.bin", "rb");
 
   if (cpu->bin_file == nullptr)
     {
-      return -1;
+      return ;
     }
 
   STACK_CTOR(cpu->stk, STANDARD_CAPACITY);
 
+  cpu->bin_file_size = getFileSize(cpu->bin_file);
   cpu->pc = 0;
   cpu->err_code = 0;
 
@@ -22,35 +24,51 @@ int spuCtor(CPU *cpu)
 
   if (buffer_init_status != EXECUTION_SUCCESS)
     {
-      return -1;
+      return buffer_init_status;
     }
-  
-
 }
 
 static int initBuffer(CPU *cpu)
 {
-  fread(&cpu->buf_size, sizeof(size_t), 1, cpu->bin_file);
+  cpu->buff_size = cpu->bin_file_size / sizeof(int);
 
-  cpu->buffer = (int*)calloc(cpu->buf_size, sizeof(int));
+  cpu->buffer = (int*)calloc(cpu->buff_size, sizeof(int));
 
-  for (size_t i = 0; i < cpu->buf_size; i++)
+  if (cpu->buffer == nullptr)
     {
-      fread(cpu->buffer + i, sizeof(int), 1, cpu->bin_file);
+      return BUFFER_ALLOCATION_ERROR;
     }
+
+  fread(cpu->buffer, sizeof(int), cpu->buff_size, cpu->bin_file);
 
   return EXECUTION_SUCCESS;
 }
 
-void executeCommands(CPU *cpu)
+#define DEF_CMD(cmd, params, ...)                             \
+        case cmd:                                             \
+          {                                                   \
+            if (params)                                       \
+              {                                               \
+                elem_t param = 0;                             \
+                elem_t *param_ptr = &param;                   \
+                                                              \
+                int get_param_status = getParam(cpu, &param); \
+                                                              \
+                if (get_param_status != EXECUTION_SUCCESS)    \
+                  {                                           \
+                    cpu->err_code |= INVALID_PARAM_ERROR;     \
+                                                              \
+                    return INVALID_PARAM_ERROR;               \
+                  }                                           \
+              }                                               \
+                                                              \
+            __VA_ARGS__;                                      \
+          }
+
+int executeCommands(CPU *cpu)
 {
   Stack *stk = cpu->stk;
   int *buffer = cpu->buffer;
-
-  cpu->reg_arr = (int*)calloc(4, sizeof(int));
-  int *reg_arr = cpu->reg_arr;
-
-  size_t buf_size = cpu->buf_size;
 
   int read_cmd = 0;
 
@@ -58,34 +76,33 @@ void executeCommands(CPU *cpu)
     {
       switch (read_cmd)
       {
-        case PUSH:
-          {
-            int arg_type = 0;
-            elem_t arg = getArg(reg_arr[cpu->pc], &arg_type);
-
-            stackPush(stk, arg);
-          }
-
-        case POP:
-          {
-            int arg_type = 0;
-            elem_t arg = getArg(reg_arr[cpu->pc], &arg_type);
-
-            stackPush(stk, arg);
-          }
-
-        case ADD:
-          {
-            elem_t first_num = 0;
-            elem_t second_num = 0;
-
-            stackPop(stk, &first_num);
-            stackPop(stk, &second_num);
-
-            stackPush(stk, first_num + second_num);
-          }
+        #include "../include/commands.h"
       }
+
+      cpu->pc++;
     }
 }
 
+int getParam(CPU *cpu, elem_t **param)
+{
+  int *buffer = cpu->buffer;
+
+  if (GET_PARAM_TYPE(buffer[cpu->pc]) == IMMEDIATE_CONST_TYPE)
+    {
+      **param = buffer[++cpu->pc];
+    }
+
+  else if (GET_PARAM_TYPE(buffer[cpu->pc]) == REGISTER_TYPE)
+    {
+      int reg_idx = buffer[++cpu->pc];
+      *param = &cpu->regs[reg_idx];
+    }
+
+  else 
+    {
+      return INVALID_PARAM_ERROR;
+    }
+
+  return EXECUTION_SUCCESS;
+}
 

@@ -1,5 +1,5 @@
 #include "asm.h"
-
+#include <sys/stat.h>
 //#########################################################################################################
 
 static int initCommandBuffer(AsmFile *asmfile);
@@ -37,18 +37,18 @@ int asmFileCtor(AsmFile *asmfile)
       return init_buffer_status;
     }
 
-  int init_word_array = initWordArray(asmfile);
+  int init_word_arr_status = initWordArray(asmfile);
 
-  if (init_word_array != EXECUTION_SUCCESS)
+  if (init_word_arr_status != EXECUTION_SUCCESS)
     {
-      return init_word_array;
+      return init_word_arr_status;
     }
 
-  int init_cmd_array = initCommandArray(asmfile);
+  int init_cmd_arr_status = initCommandArray(asmfile);
 
-  if (init_cmd_array != EXECUTION_SUCCESS)
+  if (init_cmd_arr_status != EXECUTION_SUCCESS)
     {
-      return init_cmd_array;
+      return init_cmd_arr_status;
     }
 
   return EXECUTION_SUCCESS;
@@ -58,7 +58,7 @@ int asmFileCtor(AsmFile *asmfile)
 
 static int initCommandBuffer(AsmFile *asmfile)
 {
-  asmfile->cmd_file_size = getFileSize("cmd_file.txt");
+  asmfile->cmd_file_size = getFileSize(asmfile->cmd_file);
 
   asmfile->cmd_buff = (char*)calloc(asmfile->cmd_file_size, sizeof(char));
 
@@ -144,23 +144,23 @@ static int initWordArray(AsmFile *asmfile)
 
 //########################################################################################################
 
-#define DEF_CMD(cmd, args, ...)                                     \
+#define DEF_CMD(cmd, params, ...)                                   \
       if (!strcasecmp(#cmd, word_arr[words_cnt]))                   \
         {                                                           \
           cmd_arr[cmd_cnt].code = cmd;                              \
                                                                     \
-          if (args)                                                 \
+          if (params)                                               \
             {                                                       \
               words_cnt++;                                          \
                                                                     \
-              int err_status = getParam(word_arr[words_cnt],        \
-                                        &cmd_arr[cmd_cnt]);         \
+              int get_param_status = getParam(word_arr[words_cnt],  \
+                                              &cmd_arr[cmd_cnt]);   \
                                                                     \
-              if (err_status != EXECUTION_SUCCESS)                  \
+              if (get_param_status != EXECUTION_SUCCESS)            \
                 {                                                   \
-                  asmfile->err_code |= err_status;                  \
+                  asmfile->err_code |= get_param_status;            \
                                                                     \
-                  return err_status;                                \
+                  return get_param_status;                          \
                 }                                                   \
             }                                                       \
                                                                     \
@@ -189,7 +189,7 @@ static int initCommandArray(AsmFile *asmfile)
         {
           asmfile->err_code |= INVALID_COMMAND_ERROR;
 
-          return INVALID_PARAM_ERROR;
+          return INVALID_COMMAND_ERROR;
         }
     }
 
@@ -214,8 +214,6 @@ static int getParam(char *param, Command *cmd)
 
       cmd->code |= IMMEDIATE_CONST_TYPE;
       cmd->param = atoi(param);
-      
-      return EXECUTION_SUCCESS;
     }
 
   else if (strlen(param) == 3 && param[0] == 'r' && param[2] == 'x')
@@ -227,11 +225,14 @@ static int getParam(char *param, Command *cmd)
 
       cmd->code |= REGISTER_TYPE;
       cmd->param = param[1] - 'a';
-
-      return EXECUTION_SUCCESS;
     }
 
-  return INVALID_PARAM_ERROR;
+  else 
+    {
+      return INVALID_PARAM_ERROR;
+    }
+
+  return EXECUTION_SUCCESS;
 }
 
 //########################################################################################################
@@ -306,6 +307,7 @@ int outputBinFile(AsmFile *asmfile)
 
   fwrite(binary_code_arr, sizeof(int), asmfile->words_num, bin_file);
 
+  free(binary_code_arr);
   fclose(bin_file);
 
   return EXECUTION_SUCCESS;

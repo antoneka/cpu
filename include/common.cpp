@@ -2,6 +2,7 @@
 #include "common.h"
 #include <sys/stat.h>
 
+/*
 size_t getFileSize(const char *filename)
 {
     assert(filename != nullptr);
@@ -17,5 +18,16 @@ size_t getFileSize(const char *filename)
 
     return (size_t)file_info.st_size;
 }
+*/
 
+size_t getFileSize(FILE *file)
+{
+  size_t file_size = 0;
+
+  fseek(file, 0, SEEK_END);
+  file_size = ftell(file);
+  fseek(file, 0, SEEK_SET);
+
+  return file_size;
+}
 
