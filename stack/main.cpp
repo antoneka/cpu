@@ -6,7 +6,7 @@ int main()
 {
   Stack stk = {};
 
-  int creation_status = STACK_CTOR(&stk, 10);
+  int creation_status = STACK_CTOR(NULL, 10);
 
   if (creation_status == STACK_ALREADY_CONSTRUCTED)
     {

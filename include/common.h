@@ -67,6 +67,9 @@ enum ExecStatus
   STACK_PTR_IS_NULL             = 1 << 19,
   POPVALUE_PTR_IS_NULL          = 1 << 20,
   HASH_CORRUPTED                = 1 << 21,
+
+  //CPU
+  ASM_FILE_OPEN_ERROR           = 1 << 22,
 };
 
 //#########################################################################################################

@@ -1,7 +1,20 @@
 
   
 push                   3
-pop   rax
+out
+
+push                   4
+out
+mul
+out
+pop rax 
+out
+push 20
+out
+push rax
+out
+sub
+out
 
 HLT
 

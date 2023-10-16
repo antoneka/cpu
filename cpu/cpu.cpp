@@ -1,17 +1,29 @@
 #include "cpu.h"
-#include "../include/common.h"
-#include <stdlib.h>
+
+//#########################################################################################################
 
 static int initBuffer(CPU *cpu);
-int getParam(CPU *cpu, elem_t **param);
 
-int spuCtor(CPU *cpu)
+static int getParam(CPU *cpu, elem_t **param);
+
+//#########################################################################################################
+
+int cpuCtor(CPU *cpu)
 {
+  assert(cpu != nullptr);
+
   cpu->bin_file = fopen("asm_file.bin", "rb");
 
   if (cpu->bin_file == nullptr)
     {
-      return ;
+      return ASM_FILE_OPEN_ERROR;
+    }
+
+  cpu->stk = (Stack*)calloc(1, sizeof(Stack));
+  
+  if (cpu->stk == nullptr)
+    {
+      return -1;
     }
 
   STACK_CTOR(cpu->stk, STANDARD_CAPACITY);
@@ -26,7 +38,11 @@ int spuCtor(CPU *cpu)
     {
       return buffer_init_status;
     }
+
+  return EXECUTION_SUCCESS;
 }
+
+//#########################################################################################################
 
 static int initBuffer(CPU *cpu)
 {
@@ -44,26 +60,31 @@ static int initBuffer(CPU *cpu)
   return EXECUTION_SUCCESS;
 }
 
-#define DEF_CMD(cmd, params, ...)                             \
-        case cmd:                                             \
-          {                                                   \
-            if (params)                                       \
-              {                                               \
-                elem_t param = 0;                             \
-                elem_t *param_ptr = &param;                   \
-                                                              \
-                int get_param_status = getParam(cpu, &param); \
-                                                              \
-                if (get_param_status != EXECUTION_SUCCESS)    \
-                  {                                           \
-                    cpu->err_code |= INVALID_PARAM_ERROR;     \
-                                                              \
-                    return INVALID_PARAM_ERROR;               \
-                  }                                           \
-              }                                               \
-                                                              \
-            __VA_ARGS__;                                      \
-          }
+//#########################################################################################################
+
+#define DEF_CMD(cmd, params, ...)                                   \
+          case cmd:                                                 \
+            {                                                       \
+                                                                    \
+              elem_t param = 0;                                     \
+              elem_t *param_ptr = &param;                           \
+                                                                    \
+              if (params)                                           \
+                {                                                   \
+                  int get_param_status = getParam(cpu, &param_ptr); \
+                                                                    \
+                  if (get_param_status != EXECUTION_SUCCESS)        \
+                    {                                               \
+                      cpu->err_code |= INVALID_PARAM_ERROR;         \
+                                                                    \
+                      return INVALID_PARAM_ERROR;                   \
+                    }                                               \
+                }                                                   \
+                                                                    \
+              __VA_ARGS__;                                          \
+                                                                    \
+              break;                                                \
+            }
 
 int executeCommands(CPU *cpu)
 {
@@ -75,15 +96,27 @@ int executeCommands(CPU *cpu)
   while ((read_cmd = GET_CMD(buffer[cpu->pc])) != HLT) 
     {
       switch (read_cmd)
-      {
-        #include "../include/commands.h"
-      }
+        {
+          #include "../include/commands.h"
+
+          default:
+            {
+              fprintf(stderr, "err\n");
+            }
+
+        }
 
       cpu->pc++;
     }
+
+  return EXECUTION_SUCCESS;
 }
 
-int getParam(CPU *cpu, elem_t **param)
+#undef DEF_CMD
+
+//#########################################################################################################
+
+static int getParam(CPU *cpu, elem_t **param)
 {
   int *buffer = cpu->buffer;
 
@@ -105,4 +138,35 @@ int getParam(CPU *cpu, elem_t **param)
 
   return EXECUTION_SUCCESS;
 }
+
+//#########################################################################################################
+
+int cpuDtor(CPU *cpu)
+{
+  if (cpu->bin_file)
+    {
+      fclose(cpu->bin_file);
+      cpu->bin_file = nullptr;
+    }
+
+  stackDtor(cpu->stk);
+  free(cpu->stk);
+  cpu->stk = nullptr;
+
+  free(cpu->buffer);
+  cpu->buffer = nullptr;
+
+  cpu->bin_file_size = 0;
+  cpu->pc = 0;
+  cpu->err_code = 0;
+  cpu->buff_size = 0;
+
+  for (size_t reg_cnt = 0; reg_cnt < REGS_NUM; reg_cnt++)
+    {
+      cpu->regs[reg_cnt] = 0;
+    }
+
+  return EXECUTION_SUCCESS;
+}
+
 

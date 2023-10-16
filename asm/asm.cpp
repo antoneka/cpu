@@ -1,5 +1,5 @@
 #include "asm.h"
-#include <sys/stat.h>
+
 //#########################################################################################################
 
 static int initCommandBuffer(AsmFile *asmfile);
@@ -131,11 +131,11 @@ static int initWordArray(AsmFile *asmfile)
 
   word_arr[0] = cmd_buffer + symb_cnt;
   
-  for (size_t words_cnt = 1; words_cnt < asmfile->words_num; symb_cnt++)
+  for (size_t word_cnt = 1; word_cnt < asmfile->words_num; symb_cnt++)
     {
       if (cmd_buffer[symb_cnt] == '\0' && cmd_buffer[symb_cnt + 1] != '\0')
         {
-          word_arr[words_cnt++] = cmd_buffer + symb_cnt + 1;
+          word_arr[word_cnt++] = cmd_buffer + symb_cnt + 1;
         }
     }
 
@@ -145,15 +145,15 @@ static int initWordArray(AsmFile *asmfile)
 //########################################################################################################
 
 #define DEF_CMD(cmd, params, ...)                                   \
-      if (!strcasecmp(#cmd, word_arr[words_cnt]))                   \
+      if (!strcasecmp(#cmd, word_arr[word_cnt]))                    \
         {                                                           \
           cmd_arr[cmd_cnt].code = cmd;                              \
                                                                     \
           if (params)                                               \
             {                                                       \
-              words_cnt++;                                          \
+              word_cnt++;                                           \
                                                                     \
-              int get_param_status = getParam(word_arr[words_cnt],  \
+              int get_param_status = getParam(word_arr[word_cnt],   \
                                               &cmd_arr[cmd_cnt]);   \
                                                                     \
               if (get_param_status != EXECUTION_SUCCESS)            \
@@ -164,7 +164,7 @@ static int initWordArray(AsmFile *asmfile)
                 }                                                   \
             }                                                       \
                                                                     \
-          words_cnt++;                                              \
+          word_cnt++;                                               \
         }                                                           \
       else
 
@@ -182,7 +182,7 @@ static int initCommandArray(AsmFile *asmfile)
   Command *cmd_arr = asmfile->cmd_arr;
   char **word_arr = asmfile->word_arr;
 
-  for (size_t cmd_cnt = 0, words_cnt = 0; cmd_cnt < asmfile->cmds_num; cmd_cnt++)
+  for (size_t cmd_cnt = 0, word_cnt = 0; cmd_cnt < asmfile->cmds_num; cmd_cnt++)
     {
       #include "../include/commands.h"
 
@@ -295,13 +295,13 @@ int outputBinFile(AsmFile *asmfile)
 
   Command *cmd_arr = asmfile->cmd_arr;
 
-  for (size_t tokens_cnt = 0, cmd_cnt = 0; tokens_cnt < asmfile->words_num; cmd_cnt++)
+  for (size_t token_cnt = 0, cmd_cnt = 0; token_cnt < asmfile->words_num; cmd_cnt++)
     {
-      binary_code_arr[tokens_cnt++] = cmd_arr[cmd_cnt].code;
+      binary_code_arr[token_cnt++] = cmd_arr[cmd_cnt].code;
 
       if (GET_PARAM_TYPE(cmd_arr[cmd_cnt].code) != NO_PARAM_TYPE)
         {
-          binary_code_arr[tokens_cnt++] = cmd_arr[cmd_cnt].param;
+          binary_code_arr[token_cnt++] = cmd_arr[cmd_cnt].param;
         }
     }
 
