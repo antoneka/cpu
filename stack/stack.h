@@ -64,19 +64,19 @@ struct Stack
 
 //-----------------------------------------------------------------------------------------------------------
 
-ExecStatus stackCtor(Stack *stk, size_t initial_cap, const char *var_name, 
+int stackCtor(Stack *stk, size_t initial_cap, const char *var_name, 
                      const char *file_name, size_t line_num, const char *func_name);
 
-ExecStatus stackPush(Stack *stk, elem_t value);
+int stackPush(Stack *stk, elem_t value);
 
-ExecStatus stackPop(Stack *stk, elem_t *return_value);
+int stackPop(Stack *stk, elem_t *return_value);
 
-ExecStatus stackResize(Stack *stk, size_t new_capacity);
+int stackResize(Stack *stk, size_t new_capacity);
 
 ON_DEBUG(
 unsigned int hashCalc(Stack *stk);
 )
 
-ExecStatus stackDtor(Stack *stk);
+int stackDtor(Stack *stk);
 
 #endif // STACK_H

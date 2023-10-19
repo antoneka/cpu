@@ -1,30 +1,24 @@
 #include "disasm.h"
+#include "../include/common.h"
 
-//#########################################################################################################
-
-static int initByteCodeBuffer(DisAsmFile *disasmfile);
-
-static void splitByteCodeBuffer(DisAsmFile *disasmfile);
-
-static int printCommand(int cmd, int param, int nums_read, FILE *output_disasm);
-
-//#########################################################################################################
+//----------------------------------------------------------------------------------------------------------
 
 int disAsmFileCtor(DisAsmFile *disasmfile)
 {
   assert(disasmfile != nullptr);
 
-  disasmfile->bytecode_file = fopen("bytecode_file.txt", "r");
+  disasmfile->bin_file = fopen("asm_file.bin", "rb");
 
-  if (disasmfile->bytecode_file == nullptr)
+  if (disasmfile->bin_file == nullptr)
     {
       return OPEN_BYTECODE_FILE_ERROR;
     }
 
-  disasmfile->bytecode_file_size = 0;
+  disasmfile->bin_file_size = getFileSize(disasmfile->bin_file);
   disasmfile->err_code = 0;
 
-  int init_buffer_status = initByteCodeBuffer(disasmfile);
+  int init_buffer_status = initAsmBuffer(&disasmfile->buffer, &disasmfile->buff_size, 
+                                         disasmfile->bin_file, disasmfile->bin_file_size);
 
   if (init_buffer_status != EXECUTION_SUCCESS)
     {
@@ -34,42 +28,29 @@ int disAsmFileCtor(DisAsmFile *disasmfile)
   return EXECUTION_SUCCESS;
 }
 
-//#########################################################################################################
+//----------------------------------------------------------------------------------------------------------
 
-static int initByteCodeBuffer(DisAsmFile *disasmfile)
-{
-  disasmfile->bytecode_file_size = getFileSize("bytecode_file.txt");
-
-  disasmfile->bytecode_buffer = (char*)calloc(disasmfile->bytecode_file_size, sizeof(char));
-
-  if (disasmfile->bytecode_buffer == nullptr) 
-    {
-      disasmfile->err_code |= BUFFER_ALLOCATION_ERROR;
-
-      return BUFFER_ALLOCATION_ERROR;
-    }
-
-  fread(disasmfile->bytecode_buffer, sizeof(char), disasmfile->bytecode_file_size, disasmfile->bytecode_file);
-
-  splitByteCodeBuffer(disasmfile);
-
-  return EXECUTION_SUCCESS;
-}
-
-//#########################################################################################################
-
-static void splitByteCodeBuffer(DisAsmFile *disasmfile)
-{
-  char sep[] = "\n";
-  char *istr = strtok(disasmfile->bytecode_buffer, sep);
-
-  while (istr != NULL)
-    {
-      istr = strtok(NULL, sep);
-    }
-}
-
-//#########################################################################################################
+#define DEF_CMD(cmd, params, ...)                                       \
+          case cmd:                                                     \
+            {                                                           \
+              fprintf(output_disasm, #cmd);       \
+                                                                        \
+              if (params) \
+                { \
+                  if (GET_PARAM_TYPE(read_cmd) == IMMEDIATE_CONST_TYPE) \
+                    { \
+                      fprintf(output_disasm, " %d", buffer[++cmd_cnt]); \
+                    }   \
+                  else if (GET_PARAM_TYPE(read_cmd) == REGISTER_TYPE) \
+                    {   \
+                      fprintf(output_disasm, " r%cx", buffer[++cmd_cnt] + 'a'); \
+                    }  \
+                } \
+                                  \
+              fprintf(output_disasm, "\n"); \
+                    \
+              break; \
+            }                            
 
 int outputDisAsmFile(DisAsmFile *disasmfile)
 {
@@ -80,150 +61,49 @@ int outputDisAsmFile(DisAsmFile *disasmfile)
       disasmfile->err_code |= WRITE_DISASM_FILE_ERROR;
     }
 
-  size_t symb_cnt = 0;
+  int *buffer = disasmfile->buffer;
 
-  while (symb_cnt < disasmfile->bytecode_file_size)
+  for (size_t cmd_cnt = 0; cmd_cnt < disasmfile->buff_size;)
     {
-      int cmd = 0;
-      int param = 0;
+      int read_cmd = buffer[cmd_cnt];
 
-      int nums_read = sscanf(disasmfile->bytecode_buffer + symb_cnt, "%d %d", &cmd, &param);
-
-      if (nums_read == 0)
+      switch (GET_CMD(read_cmd))  
         {
-          if (disasmfile->bytecode_buffer[symb_cnt] == '\0')
+          #include "../include/commands.h"
+
+          default:
             {
-              symb_cnt++;
-              continue;
+              disasmfile->err_code = INVALID_COMMAND_ERROR;
+
+              return INVALID_COMMAND_ERROR;
             }
-
-          disasmfile->err_code |= INVALID_COMMAND_ERROR;
-
-          return INVALID_COMMAND_ERROR;
         }
 
-
-      int print_status = printCommand(cmd, param, nums_read, output_disasm);
-
-      if (print_status != EXECUTION_SUCCESS)
-        {
-          disasmfile->err_code |= print_status;
-
-          return print_status;
-        }
-
-      symb_cnt += strlen(disasmfile->bytecode_buffer + symb_cnt) + 1;
+      cmd_cnt++;
     }
 
-  return EXECUTION_SUCCESS;
-}
-
-//#########################################################################################################
-
-static int printCommand(int cmd, int param, int nums_read, FILE *output_disasm)
-{
-  if (GET_CMD(cmd) == PUSH)
-    {
-      if (nums_read == 1)
-        {
-          return INVALID_PARAM_ERROR;
-        }
-
-      fprintf(output_disasm, "%s ", "push");
-
-      if (GET_PARAM_TYPE(cmd) == REGISTER_TYPE)
-        {
-          fprintf(output_disasm, "r%cx\n", param + 'a');
-        }
-      else if (GET_PARAM_TYPE(cmd) == IMMEDIATE_CONST_TYPE)
-        {
-          fprintf(output_disasm, "%d\n", param);
-        }
-    } 
-
-  else if (GET_CMD(cmd) == POP)
-   {
-      if (nums_read == 1)
-        {
-          return INVALID_PARAM_ERROR;
-        }
-
-      fprintf(output_disasm, "%s ", "pop");
-
-      if (GET_PARAM_TYPE(cmd) == REGISTER_TYPE)
-        {
-          fprintf(output_disasm, "r%cx\n", param + 'a');
-        }
-    } 
-
-  else if (GET_CMD(cmd) == IN)
-    {
-      fprintf(output_disasm, "%s\n", "in");
-    } 
-
-  else if (GET_CMD(cmd) == HLT)
-    {
-      fprintf(output_disasm, "%s\n", "HLT");
-    } 
-
-  else if (GET_CMD(cmd) == OUT)
-    {
-      fprintf(output_disasm, "%s\n", "out");
-    } 
-
-  else if (GET_CMD(cmd) == ADD)
-    {
-      fprintf(output_disasm, "%s\n", "add");
-    } 
-
-  else if (GET_CMD(cmd) == SUB)
-    {
-      fprintf(output_disasm, "%s\n", "sub");
-    } 
-
-  else if (GET_CMD(cmd) == MUL)
-    {
-      fprintf(output_disasm, "%s\n", "mul");
-    } 
-
-  else if (GET_CMD(cmd) == DIV)
-    {
-      fprintf(output_disasm, "%s\n", "div");
-    } 
-
-  else if (GET_CMD(cmd) == SQRT)
-    {
-      fprintf(output_disasm, "%s\n", "sqrt");
-    } 
-
-  else if (GET_CMD(cmd) == SIN)
-    {
-      fprintf(output_disasm, "%s\n", "sin");
-    } 
-
-  else if (GET_CMD(cmd) == COS)
-    {
-      fprintf(output_disasm, "%s\n", "cos");
-    } 
+  fclose(output_disasm);
 
   return EXECUTION_SUCCESS;
 }
 
-//#########################################################################################################
+#undef DEF_CMD
+
+//----------------------------------------------------------------------------------------------------------
 
 int disAsmFileDtor(DisAsmFile *disasmfile)
 {
-  if (!disasmfile->bytecode_file)
+  if (!disasmfile->bin_file)
     {
-      fclose(disasmfile->bytecode_file);
+      fclose(disasmfile->bin_file);
+      disasmfile->bin_file = nullptr;
     }
 
+  free(disasmfile->buffer);
 
-  free(disasmfile->bytecode_buffer);
-
-  disasmfile->bytecode_buffer = nullptr;
-  disasmfile->bytecode_file = nullptr;
-  disasmfile->bytecode_file_size = 0;
+  disasmfile->buffer = nullptr;
+  disasmfile->bin_file = nullptr;
+  disasmfile->bin_file_size = 0;
   disasmfile->err_code = 0;
 
   return EXECUTION_SUCCESS;

@@ -37,8 +37,9 @@ enum Commands
 
 enum ExecStatus
 {
-  // assembler 
   EXECUTION_SUCCESS             =       0,
+
+  // assembler 
   BUFFER_ALLOCATION_ERROR       = 1 <<  0,
   WORD_ARR_ALLOCATION_ERROR     = 1 <<  1,
   COMMAND_ARR_ALLOCATION_ERROR  = 1 <<  2,
@@ -75,5 +76,7 @@ enum ExecStatus
 //#########################################################################################################
 
 size_t getFileSize(FILE *file);
+
+int initAsmBuffer(int **buffer, size_t *buff_size, FILE *bin_file, size_t bin_file_size);
 
 #endif // COMMON_H

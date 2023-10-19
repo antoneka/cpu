@@ -2,7 +2,7 @@
 
 //#########################################################################################################
 
-static int initBuffer(CPU *cpu);
+// static int initAsmBuffer(CPU *cpu);
 
 static int getParam(CPU *cpu, elem_t **param);
 
@@ -32,11 +32,12 @@ int cpuCtor(CPU *cpu)
   cpu->pc = 0;
   cpu->err_code = 0;
 
-  int buffer_init_status = initBuffer(cpu);
+  int init_buffer_status = initAsmBuffer(&cpu->buffer, &cpu->buff_size, 
+                                         cpu->bin_file, cpu->bin_file_size);
 
-  if (buffer_init_status != EXECUTION_SUCCESS)
+  if (init_buffer_status != EXECUTION_SUCCESS)
     {
-      return buffer_init_status;
+      return init_buffer_status;
     }
 
   return EXECUTION_SUCCESS;
@@ -44,7 +45,8 @@ int cpuCtor(CPU *cpu)
 
 //#########################################################################################################
 
-static int initBuffer(CPU *cpu)
+/*
+static int initAsmBuffer(CPU *cpu)
 {
   cpu->buff_size = cpu->bin_file_size / sizeof(int);
 
@@ -59,13 +61,13 @@ static int initBuffer(CPU *cpu)
 
   return EXECUTION_SUCCESS;
 }
+*/
 
 //#########################################################################################################
 
 #define DEF_CMD(cmd, params, ...)                                   \
           case cmd:                                                 \
             {                                                       \
-                                                                    \
               elem_t param = 0;                                     \
               elem_t *param_ptr = &param;                           \
                                                                     \
@@ -101,6 +103,8 @@ int executeCommands(CPU *cpu)
 
           default:
             {
+              cpu->err_code |= INVALID_COMMAND_ERROR;
+
               fprintf(stderr, "err\n");
             }
 

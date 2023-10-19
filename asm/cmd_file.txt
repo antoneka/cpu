@@ -1,13 +1,10 @@
-
-  
 push                   3
 out
-
 push                   4
 out
 mul
 out
-pop rax 
+pop rax
 out
 push 20
 out
@@ -15,12 +12,10 @@ push rax
 out
 sub
 out
-
 HLT
-
 pop rcx
-
 push      rbx
-
-                                    div
-        mul
+div
+sub
+mul
+add

@@ -12,10 +12,11 @@
 
 struct DisAsmFile
 {
-  FILE *bytecode_file;
-  size_t bytecode_file_size;
+  FILE *bin_file;
+  size_t bin_file_size;
 
-  char *bytecode_buffer;
+  int *buffer;
+  size_t buff_size;
   
   int err_code;
 };

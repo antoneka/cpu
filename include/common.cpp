@@ -31,3 +31,23 @@ size_t getFileSize(FILE *file)
   return file_size;
 }
 
+int initAsmBuffer(int **buffer, size_t *buff_size, FILE *bin_file, size_t bin_file_size)
+{
+  assert(buffer != nullptr); 
+  assert(buff_size != nullptr);
+  assert(bin_file != nullptr);
+
+  *buff_size = bin_file_size / sizeof(int);
+
+  *buffer = (int*)calloc(*buff_size, sizeof(int));
+
+  if (*buffer == nullptr)
+    {
+      return BUFFER_ALLOCATION_ERROR;
+    }
+
+  fread(*buffer, sizeof(int), *buff_size, bin_file);
+
+  return EXECUTION_SUCCESS;
+}
+

@@ -61,7 +61,7 @@ static void shiftArray(Stack *stk, ShiftDir direction)
 
 //-----------------------------------------------------------------------------------------------------------
 
-ExecStatus stackCtor(Stack *stk, size_t initial_cap, const char *var_name, 
+int stackCtor(Stack *stk, size_t initial_cap, const char *var_name, 
                      const char *file_name, size_t line_num, const char *func_name)
 {
   if (stk == nullptr)
@@ -121,13 +121,13 @@ ExecStatus stackCtor(Stack *stk, size_t initial_cap, const char *var_name,
 
 //-----------------------------------------------------------------------------------------------------------
 
-ExecStatus stackPush(Stack *stk, elem_t value)
+int stackPush(Stack *stk, elem_t value)
 {
   STACK_ASSERT(stk);
 
   if (stk->size == stk->capacity)
     {
-      ExecStatus resize_status = stackResize(stk, stk->capacity * RESIZE_COEF);
+      int resize_status = stackResize(stk, stk->capacity * RESIZE_COEF);
 
       if (resize_status != EXECUTION_SUCCESS)
         {
@@ -151,7 +151,7 @@ ExecStatus stackPush(Stack *stk, elem_t value)
 
 //-----------------------------------------------------------------------------------------------------------
 
-ExecStatus stackPop(Stack *stk, elem_t *return_value)
+int stackPop(Stack *stk, elem_t *return_value)
 {
   STACK_ASSERT(stk);
 
@@ -173,7 +173,7 @@ ExecStatus stackPop(Stack *stk, elem_t *return_value)
 
   if (stk->size * MAX_DIFF_COEF < stk->capacity)
     {
-      ExecStatus resize_status = stackResize(stk, stk->capacity / RESIZE_COEF);
+      int resize_status = stackResize(stk, stk->capacity / RESIZE_COEF);
 
       if (resize_status != EXECUTION_SUCCESS)
         {
@@ -190,7 +190,7 @@ ExecStatus stackPop(Stack *stk, elem_t *return_value)
 
 //-----------------------------------------------------------------------------------------------------------
 
-ExecStatus stackResize(Stack *stk, size_t new_capacity)
+int stackResize(Stack *stk, size_t new_capacity)
 {
   STACK_ASSERT(stk);
 
@@ -260,7 +260,7 @@ unsigned int hashCalc(Stack *stk)
 
 //-----------------------------------------------------------------------------------------------------------
 
-ExecStatus stackDtor(Stack *stk)
+int stackDtor(Stack *stk)
 {
   if (stk == nullptr)
     {
